@@ -1,20 +1,19 @@
 package com.example.demo.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
+
+import java.util.List;
+
+import com.example.demo.entity.FriendRequest;
 
 import java.time.LocalDateTime;
 
@@ -63,5 +62,12 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
+
+    @OneToMany(mappedBy = "sender")
+    private List<FriendRequest> sentRequests;
+
+    @OneToMany(mappedBy = "receiver")
+    private List<FriendRequest> receivedRequests;
+
 
 }
