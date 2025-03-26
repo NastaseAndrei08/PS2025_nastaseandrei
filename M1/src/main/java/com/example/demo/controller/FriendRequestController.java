@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.userdto.FriendRequestViewDTO;
+import com.example.demo.dto.userdto.UserViewFriendDTO;
 import com.example.demo.entity.FriendRequest;
 import com.example.demo.entity.User;
 import com.example.demo.service.FriendRequestService;
@@ -30,12 +32,14 @@ public class FriendRequestController {
     }
 
     @GetMapping("/pending")
-    public ResponseEntity<List<FriendRequest>> getPending(Principal principal) {
+    public ResponseEntity<List<FriendRequestViewDTO>> getPending(Principal principal) {
         return ResponseEntity.ok(friendRequestService.getPendingRequests(principal.getName()));
     }
 
+
     @GetMapping("/list")
-    public ResponseEntity<List<User>> getFriends(Principal principal) {
+    public ResponseEntity<List<UserViewFriendDTO>> getFriends(Principal principal) {
         return ResponseEntity.ok(friendRequestService.getFriends(principal.getName()));
     }
+
 }

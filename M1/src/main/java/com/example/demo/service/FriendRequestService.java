@@ -1,5 +1,8 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.userdto.FriendRequestViewDTO;
+import com.example.demo.dto.userdto.UserViewDTO;
+import com.example.demo.dto.userdto.UserViewFriendDTO;
 import com.example.demo.entity.FriendRequest;
 import com.example.demo.entity.FriendRequestStatus;
 import com.example.demo.entity.User;
@@ -19,6 +22,8 @@ public class FriendRequestService {
     private final UserRepository userRepository;
 
     public void sendRequest(String senderEmail, String receiverEmail) {
+        System.out.println("Sender email primit din token: " + senderEmail);
+
         User sender = userRepository.findUserByEmail(senderEmail)
                 .orElseThrow(() -> new RuntimeException("Sender not found"));
 
@@ -47,13 +52,24 @@ public class FriendRequestService {
         friendRequestRepository.save(request);
     }
 
-    public List<FriendRequest> getPendingRequests(String userEmail) {
+    public List<FriendRequestViewDTO> getPendingRequests(String userEmail) {
         User user = userRepository.findUserByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return friendRequestRepository.findByReceiverAndStatus(user, FriendRequestStatus.PENDING);
+
+        return friendRequestRepository.findByReceiverAndStatus(user, FriendRequestStatus.PENDING)
+                .stream()
+                .map(req -> new FriendRequestViewDTO(
+                        req.getId(),
+                        req.getSender().getEmail(),
+                        req.getSender().getName(),
+                        req.getReceiver().getEmail(),
+                        req.getStatus(),
+                        req.getTimestamp()
+                ))
+                .toList();
     }
 
-    public List<User> getFriends(String userEmail) {
+    public List<UserViewFriendDTO> getFriends(String userEmail) {
         User user = userRepository.findUserByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -61,7 +77,13 @@ public class FriendRequestService {
                 .findBySenderOrReceiverAndStatus(user, user, FriendRequestStatus.ACCEPTED);
 
         return accepted.stream()
-                .map(req -> req.getSender().equals(user) ? req.getReceiver() : req.getSender())
+                .map(req -> {
+                    User friend = req.getSender().equals(user) ? req.getReceiver() : req.getSender();
+                    return new UserViewFriendDTO(friend.getId(), friend.getName(), friend.getEmail());
+                })
                 .toList();
     }
+
+
+
 }
