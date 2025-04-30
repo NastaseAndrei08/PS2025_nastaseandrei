@@ -4,10 +4,13 @@ import com.example.demo.dto.userdto.FriendRequestViewDTO;
 import com.example.demo.dto.userdto.UserViewFriendDTO;
 import com.example.demo.entity.FriendRequest;
 import com.example.demo.entity.User;
+import com.example.demo.security.JwtService;
 import com.example.demo.service.FriendRequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+
 
 import java.security.Principal;
 import java.util.List;
@@ -18,6 +21,8 @@ import java.util.List;
 public class FriendRequestController {
 
     private final FriendRequestService friendRequestService;
+    private final JwtService jwtService;
+
 
     @PostMapping("/send")
     public ResponseEntity<String> sendRequest(@RequestParam String to, Principal principal) {
@@ -41,5 +46,14 @@ public class FriendRequestController {
     public ResponseEntity<List<UserViewFriendDTO>> getFriends(Principal principal) {
         return ResponseEntity.ok(friendRequestService.getFriends(principal.getName()));
     }
+
+    @GetMapping("/emails")
+    public ResponseEntity<List<String>> getFriendsEmails(@RequestHeader("Authorization") String authHeader) {
+        String email = jwtService.extractUsername(authHeader.substring(7));
+        List<String> friends = friendRequestService.getAcceptedFriendsEmails(email);
+        return ResponseEntity.ok(friends);
+    }
+
+
 
 }

@@ -58,4 +58,11 @@ public class AuthenticationController {
         }
         return ResponseEntity.status(401).body("Missing token");
     }
+
+    @PostMapping("/validate")
+    public ResponseEntity<String> validateToken(@RequestBody String token) {
+        String email = jwtService.extractUsername(token);
+        return ResponseEntity.ok(email);
+    }
+
 }

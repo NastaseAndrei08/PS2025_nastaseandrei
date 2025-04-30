@@ -1,7 +1,8 @@
 package com.example.demo.controller;
 
-
+import com.example.demo.service.AuthService;
 import com.example.demo.dto.userdto.UserDTO;
+import com.example.demo.dto.userdto.UserViewDTO;
 import com.example.demo.errorhandler.UserException;
 import com.example.demo.service.UserService;
 import lombok.NonNull;
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final AuthService authService;
+
 
     @RequestMapping(value = "/getAll", method = RequestMethod.GET)
     public ResponseEntity<?> displayAllUserView(){
@@ -54,4 +57,12 @@ public class UserController {
         userService.deleteUser(id);
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserViewDTO> getCurrentUser(@RequestHeader("Authorization") String authHeader) throws UserException {
+        String token = authHeader.substring(7);
+        String email = authService.extractEmailFromToken(token);
+        return ResponseEntity.ok(userService.findUserViewByEmail(email));
+    }
+
 }

@@ -84,6 +84,13 @@ public class FriendRequestService {
                 .toList();
     }
 
+    public List<String> getAcceptedFriendsEmails(String userEmail) {
+        return getFriends(userEmail).stream()
+                .map(friend -> friend.getEmail())
+                .toList();
+    }
+
+
 
 
 }
