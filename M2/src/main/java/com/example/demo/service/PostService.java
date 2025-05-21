@@ -20,7 +20,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final HashtagRepository hashtagRepository;
-    private final FriendshipService friendshipService; // ai nevoie de prietenii!
+    private final FriendshipService friendshipService;
 
     public void createPost(String userEmail, PostCreateDTO dto) {
         User author = userRepository.findUserByEmail(userEmail)
