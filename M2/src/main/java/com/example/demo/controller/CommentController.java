@@ -2,6 +2,8 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.commentdto.CommentCreateDTO;
 import com.example.demo.dto.commentdto.CommentViewDTO;
+import com.example.demo.entity.Comment;
+import com.example.demo.repository.CommentRepository;
 import com.example.demo.service.AuthService;
 import com.example.demo.service.CommentService;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/comments")
@@ -17,6 +20,7 @@ public class CommentController {
 
     private final CommentService commentService;
     private final AuthService authService;
+    private final CommentRepository commentRepository;
 
     @PostMapping
     public ResponseEntity<String> createComment(
@@ -56,4 +60,16 @@ public class CommentController {
         commentService.deleteComment(commentId, email);
         return ResponseEntity.ok("Comment deleted.");
     }
+
+    @DeleteMapping("/moderate/{commentId}")
+    public ResponseEntity<String> deleteCommentByModerator(@PathVariable Long commentId) {
+        Optional<Comment> optionalComment = commentRepository.findById(commentId);
+        if (optionalComment.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        commentRepository.deleteById(commentId);
+        return ResponseEntity.ok("Comment deleted by moderator.");
+    }
+
 }

@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.userdto.UserDTO;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
 
@@ -9,8 +10,10 @@ import com.example.demo.security.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 
@@ -23,6 +26,8 @@ public class AuthenticationController {
     private final JwtService jwtService;
     private final RoleRepository roleRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final RestTemplate restTemplate;
+
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody User user) {
@@ -44,9 +49,25 @@ public class AuthenticationController {
     public ResponseEntity<String> login(@RequestBody User loginRequest) {
         return userRepository.findUserByEmail(loginRequest.getEmail())
                 .filter(user -> passwordEncoder.matches(loginRequest.getPassword(), user.getPassword()))
-                .map(user -> ResponseEntity.ok(jwtService.generateToken(user.getEmail())))
+                .map(user -> {
+                    //  Verificare dacă userul e blocat
+                    String url = "http://localhost:8083/moderate/is-blocked?email=" + user.getEmail();
+                    boolean isBlocked = false;
+                    try {
+                        ResponseEntity<Boolean> response = restTemplate.getForEntity(url, Boolean.class);
+                        isBlocked = Boolean.TRUE.equals(response.getBody());
+                    } catch (Exception ignored) {}
+
+                    if (isBlocked) {
+                        return ResponseEntity.status(403).body("Your account has been blocked.");
+                    }
+
+                    // Generare token dacă nu e blocat
+                    return ResponseEntity.ok(jwtService.generateToken(user.getEmail()));
+                })
                 .orElse(ResponseEntity.status(401).body("Invalid credentials"));
     }
+
 
     @GetMapping("/me")
     public ResponseEntity<String> whoAmI(HttpServletRequest request) {
@@ -64,5 +85,23 @@ public class AuthenticationController {
         String email = jwtService.extractUsername(token);
         return ResponseEntity.ok(email);
     }
+
+    @PostMapping("/validate/user")
+    public ResponseEntity<UserDTO> validateTokenAndGetUser(@RequestBody String token) {
+        String email = jwtService.extractUsername(token);
+        User user = userRepository.findUserByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setEmail(user.getEmail());
+        dto.setRoleName(user.getRole().getName());
+
+        return ResponseEntity.ok(dto);
+    }
+
+
+
+
 
 }

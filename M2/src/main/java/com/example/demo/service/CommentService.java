@@ -58,4 +58,24 @@ public class CommentService {
         comment.setContent(newContent);
         commentRepository.save(comment);
     }
+
+    public List<CommentViewDTO> getCommentsByPostId(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        return commentRepository.findAllByPost(post).stream()
+                .map(comment -> new CommentViewDTO(
+                        comment.getId(),
+                        comment.getContent(),
+                        comment.getAuthor().getEmail(),  // sau getUsername(), dacă ai
+                        comment.getCreatedAt()
+                ))
+                .toList();
+    }
+
+    public List<Comment> findAllByPostId(Long postId) {
+        return commentRepository.findAllByPostId(postId);
+    }
+
+
 }

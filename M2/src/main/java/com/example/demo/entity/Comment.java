@@ -1,5 +1,6 @@
 package com.example.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -18,6 +19,7 @@ public class Comment {
     private User author;
 
     @ManyToOne
+    @JsonIgnore
     private Post post;
 
     public Comment() {

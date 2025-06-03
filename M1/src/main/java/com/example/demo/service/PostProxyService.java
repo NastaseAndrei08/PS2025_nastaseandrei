@@ -1,10 +1,12 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.postdto.PostCreateDTO;
 import com.example.demo.dto.postdto.PostViewDTO;
-import com.example.demo.security.JwtService;
+import com.example.demo.dto.postdto.PostWithCommentsDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
@@ -15,29 +17,83 @@ import java.util.List;
 public class PostProxyService {
 
     private final RestTemplate restTemplate;
-    private final JwtService jwtService;
-    private final FriendRequestService friendRequestService;
 
-    public List<PostViewDTO> getVisiblePosts(String token) {
-        String email = jwtService.extractUsername(token.substring(7));
-        List<String> friendEmails = friendRequestService.getAcceptedFriendsEmails(email);
+    public ResponseEntity<String> createPost(String token, PostCreateDTO dto) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", token);
+        HttpEntity<PostCreateDTO> request = new HttpEntity<>(dto, headers);
 
-        // Call M2
-        ResponseEntity<PostViewDTO[]> response = restTemplate.getForEntity(
-                "http://localhost:8082/api/posts/all",  // M2 endpoint
+        return restTemplate.exchange(
+                "http://localhost:8082/api/posts/create",
+                HttpMethod.POST,
+                request,
+                String.class
+        );
+    }
+
+    public ResponseEntity<List<PostViewDTO>> getAllPosts(String token) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", token);
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+        ResponseEntity<PostViewDTO[]> response = restTemplate.exchange(
+                "http://localhost:8082/api/posts/feed",
+                HttpMethod.GET,
+                request,
                 PostViewDTO[].class
         );
 
-        List<PostViewDTO> allPosts = Arrays.asList(response.getBody());
-
-        // Filter
-        return allPosts.stream()
-                .filter(post ->
-                        post.getAuthorEmail().equals(email) ||
-                                post.getVisibility().equalsIgnoreCase("PUBLIC") ||
-                                (post.getVisibility().equalsIgnoreCase("FRIENDS") &&
-                                        friendEmails.contains(post.getAuthorEmail()))
-                )
-                .toList();
+        return ResponseEntity.ok(Arrays.asList(response.getBody()));
     }
+
+    public ResponseEntity<String> updatePost(Long postId, String token, PostCreateDTO dto) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", token);
+        HttpEntity<PostCreateDTO> request = new HttpEntity<>(dto, headers);
+
+        return restTemplate.exchange(
+                "http://localhost:8082/api/posts/update/" + postId,
+                HttpMethod.PUT,
+                request,
+                String.class
+        );
+    }
+
+    public ResponseEntity<String> deletePost(Long postId, String token) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", token);
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+        return restTemplate.exchange(
+                "http://localhost:8082/api/posts/delete/" + postId,
+                HttpMethod.DELETE,
+                request,
+                String.class
+        );
+    }
+
+    public PostWithCommentsDTO getPostWithComments(Long postId, String token) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", token);
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+        try {
+            ResponseEntity<PostWithCommentsDTO> response = restTemplate.exchange(
+                    "http://localhost:8082/api/posts/with-comments/" + postId,
+                    HttpMethod.GET,
+                    request,
+                    PostWithCommentsDTO.class
+            );
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            System.out.println("❌ 403 Response Body: " + e.getResponseBodyAsString());
+            throw e;
+        }
+    }
+
+
+
+
+
+
 }
